@@ -1,0 +1,25 @@
+{
+  "name": "ebay-research",
+  "version": "0.1.0",
+  "description": "Node module to help me do market research on eBay",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": "",
+  "keywords": [
+    "ebay",
+    "research"
+  ],
+  "author": "Dang Mai",
+  "license": "MIT",
+  "dependencies": {
+    "ebay-api": "0.1.1",
+    "q": "*",
+    "winston": "*"
+  },
+  "devDependencies": {
+    "mocha": "*",
+    "chai": "*"
+  }
+}
