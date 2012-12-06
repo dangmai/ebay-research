@@ -11,8 +11,8 @@ module.exports = {
         user_token: "",
         countries: [
             "EBAY-US",
-            "EBAY-ENCA",
-            "EBAY-HK"
+            //"EBAY-ENCA",
+            //"EBAY-HK"
         ]
     }
 };

@@ -46,6 +46,27 @@ var schedule = function () {
     return Q.all(updateRequests)
         .then(function (sites) {
             logger.debug("Total num requests for all sites: " + numRequests);
+            // Condense the categories into 3 per request
+            sites.forEach(function (site) {
+                var index = 1,
+                    lastCategory,
+                    group;
+                site.categoryGroups = [];
+                lastCategory = site.topCategories.pop();
+                while (lastCategory) {
+                    if (index === 1) {
+                        group = [];
+                        site.categoryGroups.push(group);
+                    }
+                    group.push(lastCategory);
+                    if (index !== 3) {
+                        index = index + 1;
+                    } else {
+                        index = 1;
+                    }
+                    lastCategory = site.topCategories.pop();
+                }
+            });
             var newNumRequests = db.getTodayPlannedNumberOfRequests() + numRequests;
             // while (newNumRequests <= 4900) {
             //     sites.forEach(function (site) {
