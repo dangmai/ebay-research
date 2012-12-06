@@ -22,7 +22,7 @@
     "underscore": "*",
     "optimist": "*",
     "kue": "*",
-    "date-utils": "*"
+    "timezone-js": "*"
   },
   "devDependencies": {
     "mocha": "*",

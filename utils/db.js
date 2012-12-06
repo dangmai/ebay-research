@@ -6,7 +6,7 @@ var Q = require("q");
 var mongo = require("mongoskin");
 var config = require("config");
 var logger = require("winston");
-require("date-utils");
+var misc = require("./misc");
 var db = mongo.db(config.Mongo.address, { safe: true });
 db.collection("categories").ensureIndex({ globalId: 1 }, true, function (err) {
     if (err) {
@@ -117,7 +117,7 @@ var getTopCategoriesForSite = function (globalId) {
  */
 var getTodayNumberOfRequests = function () {
     var deferred = Q.defer();
-    db.collection("requests").findOne({ date: Date.today() }, function (err, day) {
+    db.collection("requests").findOne({ date: misc.todayInPST() }, function (err, day) {
         if (err) {
             deferred.reject(new Error(err));
         }
@@ -146,7 +146,7 @@ var getTodayPlannedNumberOfRequests = function () {
  */
 var setTodayPlannedNumberOfRequests = function (numRequests) {
     var deferred = Q.defer(),
-        today = Date.today();
+        today = misc.todayInPST();
     db.collection("requests").update({ date: today },
         { $set: {date: today, plannedRequests: numRequests }},
         { upsert: true },
@@ -165,7 +165,7 @@ var setTodayPlannedNumberOfRequests = function (numRequests) {
  */
 var incrementTodayActualNumberOfRequests = function () {
     var deferred = Q.defer(),
-        today = Date.today();
+        today = misc.todayInPST();
     db.collection("requests").update({ date: today },
         { $set: { date: today }, $inc: { "actualRequests": 1 } },
         { upsert: true },
