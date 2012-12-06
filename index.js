@@ -14,7 +14,6 @@ var startScheduler = function () {
     scheduler.schedule()
         .then(function (categories) {
             logger.info("Finished scheduling!");
-            // db.close();
             scheduler.done();
             process.exit();
         }).done();

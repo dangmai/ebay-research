@@ -21,7 +21,8 @@
     "config": "*",
     "underscore": "*",
     "optimist": "*",
-    "kue": "*"
+    "kue": "*",
+    "date-utils": "*"
   },
   "devDependencies": {
     "mocha": "*",

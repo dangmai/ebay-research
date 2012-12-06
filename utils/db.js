@@ -6,10 +6,18 @@ var Q = require("q");
 var mongo = require("mongoskin");
 var config = require("config");
 var logger = require("winston");
+require("date-utils");
 var db = mongo.db(config.Mongo.address, { safe: true });
 db.collection("categories").ensureIndex({ globalId: 1 }, true, function (err) {
     if (err) {
         logger.error("Cannot ensure index for the categories collection");
+        process.exit(2);
+        db.close();
+    }
+});
+db.collection("requests").ensureIndex({ date: 1 }, true, function (err) {
+    if (err) {
+        logger.error("Cannot ensure index for the requests collection");
         process.exit(2);
         db.close();
     }
@@ -104,6 +112,72 @@ var getTopCategoriesForSite = function (globalId) {
     return deferred.promise;
 };
 
+/**
+ * Helper function get the whole requests object for today.
+ */
+var getTodayNumberOfRequests = function () {
+    var deferred = Q.defer();
+    db.collection("requests").findOne({ date: Date.today() }, function (err, day) {
+        if (err) {
+            deferred.reject(new Error(err));
+        }
+        deferred.resolve(day);
+    });
+    return deferred.promise;
+};
+
+/**
+ * Get the number of API requests that has been planned for today.
+ * @return a promise for the planned number of requests.
+ */
+var getTodayPlannedNumberOfRequests = function () {
+    return getTodayNumberOfRequests()
+        .then(function (day) {
+            if (!day) {
+                return 0;
+            }
+            return day.plannedRequests;
+        });
+};
+
+/**
+ * Set the number of API requests that has been planned for today.
+ * @return a promise for the new planned number of requests.
+ */
+var setTodayPlannedNumberOfRequests = function (numRequests) {
+    var deferred = Q.defer(),
+        today = Date.today();
+    db.collection("requests").update({ date: today },
+        { $set: {date: today, plannedRequests: numRequests }},
+        { upsert: true },
+        function (err) {
+            if (err) {
+                deferred.reject(new Error(err));
+            }
+            deferred.resolve(numRequests);
+        });
+    return deferred.promise;
+};
+
+/**
+ * Increment the actual API requests for today.
+ * @return a promise the for new actual number of requests.
+ */
+var incrementTodayActualNumberOfRequests = function () {
+    var deferred = Q.defer(),
+        today = Date.today();
+    db.collection("requests").update({ date: today },
+        { $set: { date: today }, $inc: { "actualRequests": 1 } },
+        { upsert: true },
+        function (err) {
+            if (err) {
+                deferred.reject(new Error(err));
+            }
+            deferred.resolve(true);
+        });
+    return deferred.promise;
+};
+
 var close = function () {
     db.close();
 };
@@ -111,4 +185,7 @@ var close = function () {
 module.exports.getNumberOfTopCategories = getNumberOfTopCategories;
 module.exports.updateLocalCategories = updateLocalCategories;
 module.exports.getLocalCategories = getLocalCategories;
+module.exports.getTodayPlannedNumberOfRequests = getTodayPlannedNumberOfRequests;
+module.exports.setTodayPlannedNumberOfRequests = setTodayPlannedNumberOfRequests;
+module.exports.incrementTodayActualNumberOfRequests = incrementTodayActualNumberOfRequests;
 module.exports.close = close;
