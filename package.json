@@ -14,9 +14,14 @@
   "author": "Dang Mai",
   "license": "MIT",
   "dependencies": {
-    "ebay-api": "0.1.1",
+    "ebay-api": "git://github.com/dangmai/nodejs-ebay-api.git#master",
     "q": "*",
-    "winston": "*"
+    "winston": "*",
+    "mongoskin": "*",
+    "config": "*",
+    "underscore": "*",
+    "optimist": "*",
+    "kue": "*"
   },
   "devDependencies": {
     "mocha": "*",
