@@ -88,9 +88,7 @@ var getCategories = function (globalId, checkVersionOnly) {
     } else {
         logger.info("Getting remote categories structure for ebay site " + globalId);
     }
-
     var params = {
-        'X-EBAY-API-SITEID': sites[globalId],
         authToken: config.ebay.user_token
     };
     if (!checkVersionOnly) {
@@ -101,7 +99,12 @@ var getCategories = function (globalId, checkVersionOnly) {
         'opType': 'GetCategories',
         'appName': config.ebay.app_id,
 
-        params: params
+        params: params,
+        reqOptions: {
+            headers: {
+                'X-EBAY-API-SITEID': sites[globalId]
+            }
+        }
     });
 };
 

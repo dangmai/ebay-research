@@ -23,11 +23,6 @@ db.collection("requests").ensureIndex({ date: 1 }, true, function (err) {
     }
 });
 
-/*
- * Given an eBay site, count the number of top categories
- */
-var getNumberOfTopCategories = function (globalId) {};
-
 /**
  * Get the local category structure for an ebay site.
  * @param String globalId the GlobalId for the ebay site.
@@ -36,16 +31,29 @@ var getNumberOfTopCategories = function (globalId) {};
 var getLocalCategories = function (globalId) {
     logger.info("Get local categories from site with GlobalId " + globalId);
     var deferred = Q.defer();
-    debugger;
     db.collection('categories').findOne({globalId: globalId},
         function (err, siteCategories) {
-            debugger;
             if (err) {
                 deferred.reject(err);
             }
             deferred.resolve(siteCategories);
         });
     return deferred.promise;
+};
+
+/*
+ * Given an eBay site, get the top categories from the local database.
+ * @param String globalId the GlobalId of the site to use.
+ * @return Promise a promise for the hash of all the top categories.
+ */
+var getTopCategories = function (globalId) {
+    return getLocalCategories(globalId)
+        .then(function (categories) {
+            var allCategories = categories.data.CategoryArray.Category;
+            return allCategories.filter(function (category) {
+                return (category.CategoryLevel === "1");
+            });
+        });
 };
 
 /**
@@ -94,23 +102,11 @@ var updateLocalCategories = function (globalId) {
                     return deferred.promise;
                 });
         }
-        return Q.fcall(true);
+        return Q.fcall(function () { return true; });
     });
 };
 
 var getTopCategoryOf = function (childCategory) {};
-
-var getTopCategoriesForSite = function (globalId) {
-    var deferred = Q.defer();
-    db.collection("categories").findOne({globalId: globalId}, function (err, siteCategories) {
-        if (err) {
-            deferred.reject(new Error(err));
-        }
-        var categories = siteCategories.data.CategoriesArray;
-        return categories;
-    });
-    return deferred.promise;
-};
 
 /**
  * Helper function get the whole requests object for today.
@@ -182,7 +178,7 @@ var close = function () {
     db.close();
 };
 
-module.exports.getNumberOfTopCategories = getNumberOfTopCategories;
+module.exports.getTopCategories = getTopCategories;
 module.exports.updateLocalCategories = updateLocalCategories;
 module.exports.getLocalCategories = getLocalCategories;
 module.exports.getTodayPlannedNumberOfRequests = getTodayPlannedNumberOfRequests;

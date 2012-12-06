@@ -10,8 +10,9 @@ module.exports = {
         app_id: "",
         user_token: "",
         countries: [
-            "EBAY-US"
-            // "EBAY-ENCA"
+            "EBAY-US",
+            "EBAY-ENCA",
+            "EBAY-HK"
         ]
     }
 };

@@ -21,52 +21,57 @@ var schedule = function () {
     countries.forEach(function (globalId) {
         updateRequests.push(
             db.updateLocalCategories(globalId)
-                .then(function (numTopCategories) {
-                    numRequests = numRequests + db.getNumberOfTopCategories(globalId);
-                    //return db.getTopCategoriesForSite(globalId);  // ought to include the GlobalId somewhere here
-                    return true;
+                .then(function () {
+                    return db.getTopCategories(globalId);
                 }, function (err) {
                     // Crash here
                     logger.error(err.stack);
                     logger.error("Cannot update local categories, exit now!");
                     done();
                     process.exit(1);
+                }).then(function (topCategories) {
+                    numRequests = numRequests + topCategories.length;
+                    return {
+                        globalId: globalId,
+                        topCategories: topCategories
+                    };
+                }, function (err) {
+                    logger.error(err.stack);
+                    logger.error("Cannot get the top categories, exit now!");
+                    done();
+                    process.exit(1);
                 })
         );
     });
-    return Q.all(updateRequests);
-    // Q.all(updateRequests)  // now we have the total number of requests for each time observation
-    //     .then(function (sites) {
-    //         var newNumRequests = db.getTodayNumRequests() + numRequests,
-    //             condenseRequest;
-    //         condenseRequest = function (categories) {
+    return Q.all(updateRequests)
+        .then(function (sites) {
+            logger.debug("Total num requests for all sites: " + numRequests);
+            var newNumRequests = db.getTodayPlannedNumberOfRequests() + numRequests;
+            // while (newNumRequests <= 4900) {
+            //     sites.forEach(function (site) {
+            //         site.forEach(function (category) {
+            //             jobs.create('findItemsAdvance', {  // TODO change to findItemsAdvance and add specifics
+            //                 'serviceName': 'FindingService',
+            //                 'opType': 'findCompletedItems',
+            //                 'appId': appId,
+            //                 'GLOBAL-ID': site.globalId,
 
-    //         };
-    //         while (newNumRequests <= 4900) {
-    //             sites.forEach(function (site) {
-    //                 site.forEach(function (category) {
-    //                     jobs.create('findItemsAdvance', {  // TODO change to findItemsAdvance and add specifics
-    //                         'serviceName': 'FindingService',
-    //                         'opType': 'findCompletedItems',
-    //                         'appId': appId,
-    //                         'GLOBAL-ID': site.globalId,
+            //                 params: {
+            //                     categoryId: category.Id
+            //                 }
+            //             }).save();
+            //         });
+            //     });
 
-    //                         params: {
-    //                             categoryId: category.Id
-    //                         }
-    //                     }).save();
-    //                 });
-    //             });
-
-    //             // Lastly
-    //             db.setTodayNumRequests(newNumRequests);
-    //             newNumRequests = newNumRequests = numRequests;
-    //         }
-    //         logger.warn("Quota exceeded, won't schedule anymore");
-    //         return;
-    //     }, function (err) {
-    //         logger.error(err.message);
-    //     });
+            //     // Lastly
+            //     db.setTodayNumRequests(newNumRequests);
+            //     newNumRequests = numRequests;
+            // }
+            // logger.warn("Quota exceeded, won't schedule anymore");
+            return true;
+        }, function (err) {
+            logger.error(err.stack);
+        });
 };
 
 module.exports.schedule = schedule;

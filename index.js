@@ -10,9 +10,9 @@ var db = require("./utils/db");
 
 var startScheduler = function () {
     logger.info("Scheduler started");
-    // db.getLocalCategories("EBAY-ENCA")
+    //db.getTopCategories("EBAY-ENCA")
     scheduler.schedule()
-        .then(function (categories) {
+        .then(function () {
             logger.info("Finished scheduling!");
             scheduler.done();
             process.exit();
