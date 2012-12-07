@@ -67,7 +67,8 @@ var schedule = function () {
                             site.topCategories.forEach(function (cat) {
                                 var title = "Find completed items for site " +
                                     site.globalId + " in category " +
-                                    cat.CategoryName;
+                                    cat.CategoryName + " for ending time " +
+                                    randomEndingTime.toISOString();
                                 jobs.create('findCompletedItems', {
                                     title: title,
                                     category: cat.CategoryID,

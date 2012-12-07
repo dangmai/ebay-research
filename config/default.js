@@ -12,9 +12,9 @@ module.exports = {
         app_id: "",
         user_token: "",
         countries: [
-            "EBAY-US"
-            //"EBAY-ENCA",
-            //"EBAY-HK"
+            "EBAY-US",
+            "EBAY-GB",
+            "EBAY-SG"
         ],
         history: 7,  // how far back to look for data (in days)
         requestsPerDay: 4900
