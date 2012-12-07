@@ -33,6 +33,7 @@ var process = function () {
                     ).then(function (listings) {
                         var insertRequests = [];
                         listings.forEach(function (listing) {
+                            listing.requestedGlobalId = job.data.globalId;
                             listing.timeObserved = job.data.endTime;
                             insertRequests.push(db.insertListing(listing));
                         });

@@ -18,5 +18,8 @@ module.exports = {
         ],
         history: 7,  // how far back to look for data (in days)
         requestsPerDay: 4900
+    },
+    general: {
+        csv: "output.csv"
     }
 };
