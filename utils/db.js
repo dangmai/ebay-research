@@ -250,6 +250,17 @@ var getDistinctTimesObserved = function () {
     return deferred.promise;
 };
 
+/**
+ * Get the cursor for listings collection.
+ * @return the cursor object.
+ */
+var getListingCursor = function () {
+    return db.collection("listings").find();
+};
+
+/**
+ * Close the database connection
+ */
 var close = function () {
     db.close();
 };
@@ -264,4 +275,5 @@ module.exports.incrementTodayActualNumberOfRequests = incrementTodayActualNumber
 module.exports.insertListing = insertListing;
 module.exports.getDistinctTimesObserved = getDistinctTimesObserved;
 module.exports.getTopParentCategory = getTopParentCategory;
+module.exports.getListingCursor = getListingCursor;
 module.exports.close = close;

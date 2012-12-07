@@ -24,7 +24,8 @@
     "kue": "*",
     "timezone-js": "*",
     "date-utils": "*",
-    "redis": "0.7.2"
+    "redis": "0.7.2",
+    "ya-csv": "*"
   },
   "devDependencies": {
     "mocha": "*",
