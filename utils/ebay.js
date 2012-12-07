@@ -121,11 +121,11 @@ var findCompletedItems = function (appId, globalId, categoryId, endTime) {
         'serviceName': 'FindingService',
         'opType': 'findCompletedItems',
         'appId': appId,
-        'GLOBAL-ID': globalId,
 
         params: {
             categoryId: categoryId,
-            outputSelector: ["SellerInfo", "StoreInfo"]
+            outputSelector: ["SellerInfo", "StoreInfo"],
+            'GLOBAL-ID': globalId
         },
         filters: filters
     });
