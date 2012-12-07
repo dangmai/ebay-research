@@ -37,6 +37,10 @@ var startAnalyzing = function () {
         .then(function () {
             logger.info("Analyzing done");
             process.exit();
+        })
+        .fail(function (err) {
+            logger.error(err.stack);
+            process.exit(1);
         });
 };
 

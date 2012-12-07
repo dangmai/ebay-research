@@ -113,7 +113,31 @@ var updateLocalCategories = function (globalId) {
     });
 };
 
-var getTopCategoryOf = function (childCategory) {};
+/**
+ * Find the top parent category of a certain category
+ * @param globalId the site to search for
+ * @param childCategoryId the id of the category of which to find the parent
+ * @return a promise for the id of the top category
+ */
+var getTopParentCategory = function (globalId, childCategoryId) {
+    return getLocalCategories(globalId)
+        .then(function (siteCategories) {
+            var categories = siteCategories.data.CategoryArray.Category,
+                childCategory;
+            childCategory = categories.filter(function (category) {
+                return category.CategoryID === childCategoryId.toString();
+            })[0];
+            while (childCategory && childCategory.CategoryID !== childCategory.CategoryParentID) {
+                childCategory = categories.filter(function (category) {
+                    return category.CategoryID === childCategory.CategoryParentID;
+                })[0];
+            }
+            if (!childCategory || !childCategory.CategoryParentID) {
+                throw new Error("Cannot find top parent category for category " + childCategoryId);
+            }
+            return childCategory.CategoryParentID;
+        });
+};
 
 /**
  * Helper function get the whole requests object for today.
@@ -239,4 +263,5 @@ module.exports.getTodayActualNumberOfRequests = getTodayActualNumberOfRequests;
 module.exports.incrementTodayActualNumberOfRequests = incrementTodayActualNumberOfRequests;
 module.exports.insertListing = insertListing;
 module.exports.getDistinctTimesObserved = getDistinctTimesObserved;
+module.exports.getTopParentCategory = getTopParentCategory;
 module.exports.close = close;
