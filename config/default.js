@@ -4,15 +4,19 @@ module.exports = {
         address: "localhost:27017/ebay?auto_reconnect"
     },
     Redis: {
-        address: ""
+        host: "localhost",
+        port: 6379,
+        password: ""
     },
     ebay: {
         app_id: "",
         user_token: "",
         countries: [
-            "EBAY-US",
+            "EBAY-US"
             //"EBAY-ENCA",
             //"EBAY-HK"
-        ]
+        ],
+        history: 7,  // how far back to look for data (in days)
+        requestsPerDay: 4900
     }
 };

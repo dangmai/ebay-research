@@ -22,6 +22,13 @@ db.collection("requests").ensureIndex({ date: 1 }, true, function (err) {
         db.close();
     }
 });
+db.collection("listings").ensureIndex({ timeObserved: 1}, function (err) {
+    if (err) {
+        logger.error("Cannot ensure index for the listings collection");
+        process.exit(2);
+        db.close();
+    }
+});
 
 /**
  * Get the local category structure for an ebay site.
@@ -51,7 +58,7 @@ var getTopCategories = function (globalId) {
         .then(function (categories) {
             var allCategories = categories.data.CategoryArray.Category;
             return allCategories.filter(function (category) {
-                return (category.CategoryLevel === "1");
+                return (category.CategoryLevel === "1" && !category.Expired);
             });
         });
 };
@@ -129,10 +136,24 @@ var getTodayNumberOfRequests = function () {
 var getTodayPlannedNumberOfRequests = function () {
     return getTodayNumberOfRequests()
         .then(function (day) {
-            if (!day) {
+            if (!day || !day.plannedRequests) {
                 return 0;
             }
             return day.plannedRequests;
+        });
+};
+
+/**
+ * Get the number of API requests that has been used for today.
+ * @return a promise for the planned number of requests.
+ */
+var getTodayActualNumberOfRequests = function () {
+    return getTodayNumberOfRequests()
+        .then(function (day) {
+            if (!day || !day.actualRequests) {
+                return 0;
+            }
+            return day.actualRequests;
         });
 };
 
@@ -174,6 +195,22 @@ var incrementTodayActualNumberOfRequests = function () {
     return deferred.promise;
 };
 
+/**
+ * Insert a listing into the listings collection.
+ * @param listing the listing to insert.
+ */
+var insertListing = function (listing) {
+    var deferred = Q.defer();
+    db.collection("listings").insert(listing,
+        function (err) {
+            if (err) {
+                deferred.reject(new Error(err));
+            }
+            deferred.resolve(true);
+        });
+    return deferred.promise;
+};
+
 var close = function () {
     db.close();
 };
@@ -183,5 +220,7 @@ module.exports.updateLocalCategories = updateLocalCategories;
 module.exports.getLocalCategories = getLocalCategories;
 module.exports.getTodayPlannedNumberOfRequests = getTodayPlannedNumberOfRequests;
 module.exports.setTodayPlannedNumberOfRequests = setTodayPlannedNumberOfRequests;
+module.exports.getTodayActualNumberOfRequests = getTodayActualNumberOfRequests;
 module.exports.incrementTodayActualNumberOfRequests = incrementTodayActualNumberOfRequests;
+module.exports.insertListing = insertListing;
 module.exports.close = close;

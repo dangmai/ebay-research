@@ -4,32 +4,38 @@
 var logger = require("winston");
 var optimist = require("optimist");
 var scheduler = require("./scheduler");
-// var worker = require("./worker");
+var worker = require("./worker");
 var config = require('config');
 var db = require("./utils/db");
+var misc = require("./utils/misc");
+
+var startWebUI = function () {
+    var kue = require("kue");
+    kue.redis.createClient = misc.createRedisClient;
+    kue.app.listen(3000);
+};
 
 var startScheduler = function () {
     logger.info("Scheduler started");
-    //db.getTopCategories("EBAY-ENCA")
+    startWebUI();
     scheduler.schedule()
         .then(function () {
             logger.info("Finished scheduling!");
             scheduler.done();
-            process.exit();
         }).done();
 };
 
 var startWorker = function () {
     logger.info("Worker started");
+    worker.process();
 };
-
 
 if (require.main === module) {  // called from CLI
     var argv = optimist  // CLI options
         .usage("Scrape eBay.\nUsage: $0")
         .boolean("scheduler")
         .boolean("worker")
-        .describe("scheduler", "Start the scheduler")
+        .describe("scheduler", "Start the scheduler and the WebUI interface")
         .describe("worker", "Start the worker")
         .argv;
     // Setting up stuffs that are shared between scheduler and worker

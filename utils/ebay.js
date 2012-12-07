@@ -5,6 +5,7 @@ var ebay = require('ebay-api');
 var Q = require("q");
 var logger = require("winston");
 var config = require('config');
+var db = require('./db');
 
 var sites = {  // keys are Global ID, values are Site ID; excludes MOTOR
     "EBAY-US": 0,
@@ -36,19 +37,17 @@ var sites = {  // keys are Global ID, values are Site ID; excludes MOTOR
  * @return a promise for the value returned by the API.
  */
 var get = function (request) {
+    logger.info("ebay GET request");
     var deferred = Q.defer();
-    ebay.ebayApiGetRequest(request, function (error, items, meta) {
+    ebay.ebayApiGetRequest(request, function (error, items) {
         logger.info("eBay GET request finished");
+        db.incrementTodayActualNumberOfRequests();
         if (error) {
             logger.info("There is an error with the GET request");
             deferred.reject(new Error(error));
         } else {
             logger.info("The GET request is successful");
-            logger.debug(meta.paginationOutput);
-            deferred.resolve({
-                items: items,
-                meta: meta
-            });
+            deferred.resolve(items);
         }
     });
     return deferred.promise;
@@ -65,6 +64,7 @@ var post = function (request) {
     logger.debug(request);
     ebay.ebayApiPostXmlRequest(request, function (error, data) {
         logger.info("eBay POST request finished");
+        db.incrementTodayActualNumberOfRequests();
         if (error) {
             logger.error("There is an error with the POST request");
             deferred.reject(new Error(error));
@@ -110,15 +110,24 @@ var getCategories = function (globalId, checkVersionOnly) {
 
 /**
  * Find eBay completed items.
+ * @return a promise for the completed items.
  */
-var findCompletedItems = function (params, filters) {
+var findCompletedItems = function (appId, globalId, categoryId, endTime) {
+    var filters = {};
+    filters.itemFilter = [
+        new ebay.ItemFilter("EndTimeTo", endTime)
+    ];
     return get({
         'serviceName': 'FindingService',
         'opType': 'findCompletedItems',
-        'appId': config.ebay.appId,
+        'appId': appId,
+        'GLOBAL-ID': globalId,
 
-        params: params,
-        filters: filters || []
+        params: {
+            categoryId: categoryId,
+            outputSelector: ["SellerInfo", "StoreInfo"]
+        },
+        filters: filters
     });
 };
 
@@ -151,4 +160,6 @@ var splitProductId = function (productId) {
 
 module.exports.splitProductId = splitProductId;
 module.exports.getCategories = getCategories;
+module.exports.findCompletedItems = findCompletedItems;
 module.exports.sites = sites;
+module.exports.get = get;

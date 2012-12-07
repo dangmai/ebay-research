@@ -3,11 +3,15 @@
 
 var logger = require("winston");
 var kue = require('kue');
+var redis = require("redis");
 var Q = require("q");
 var ebay = require("./utils/ebay");
 var db = require('./utils/db');
+var misc = require('./utils/misc');
 var config = require("config");
-// var jobs = kue.createQueue();
+
+kue.redis.createClient = misc.createRedisClient;
+var jobs = kue.createQueue();
 
 var done = function () {
     db.close();
@@ -15,8 +19,12 @@ var done = function () {
 
 var schedule = function () {
     var countries = config.ebay.countries,
-        numRequests = 0,
-        updateRequests = [];
+        updateRequests = [],
+        kueErrorHandler;
+
+    kueErrorHandler = function (err) {
+        logger.error(err);
+    };
     // First, update the categories to the latest versions
     countries.forEach(function (globalId) {
         updateRequests.push(
@@ -30,7 +38,6 @@ var schedule = function () {
                     done();
                     process.exit(1);
                 }).then(function (topCategories) {
-                    numRequests = numRequests + topCategories.length;
                     return {
                         globalId: globalId,
                         topCategories: topCategories
@@ -45,51 +52,35 @@ var schedule = function () {
     });
     return Q.all(updateRequests)
         .then(function (sites) {
-            logger.debug("Total num requests for all sites: " + numRequests);
-            // Condense the categories into 3 per request
+            var eachTimeObservationRequests = 0,
+                createJobForSite;
             sites.forEach(function (site) {
-                var index = 1,
-                    lastCategory,
-                    group;
-                site.categoryGroups = [];
-                lastCategory = site.topCategories.pop();
-                while (lastCategory) {
-                    if (index === 1) {
-                        group = [];
-                        site.categoryGroups.push(group);
-                    }
-                    group.push(lastCategory);
-                    if (index !== 3) {
-                        index = index + 1;
-                    } else {
-                        index = 1;
-                    }
-                    lastCategory = site.topCategories.pop();
-                }
+                eachTimeObservationRequests = eachTimeObservationRequests + site.topCategories.length;
             });
-            var newNumRequests = db.getTodayPlannedNumberOfRequests() + numRequests;
-            // while (newNumRequests <= 4900) {
-            //     sites.forEach(function (site) {
-            //         site.forEach(function (category) {
-            //             jobs.create('findItemsAdvance', {  // TODO change to findItemsAdvance and add specifics
-            //                 'serviceName': 'FindingService',
-            //                 'opType': 'findCompletedItems',
-            //                 'appId': appId,
-            //                 'GLOBAL-ID': site.globalId,
-
-            //                 params: {
-            //                     categoryId: category.Id
-            //                 }
-            //             }).save();
-            //         });
-            //     });
-
-            //     // Lastly
-            //     db.setTodayNumRequests(newNumRequests);
-            //     newNumRequests = numRequests;
-            // }
-            // logger.warn("Quota exceeded, won't schedule anymore");
-            return true;
+            return db.getTodayPlannedNumberOfRequests()
+                .then(function (numCurrentlyPlannedRequests) {
+                    var randomEndingTime,
+                        numRequests = numCurrentlyPlannedRequests + eachTimeObservationRequests;
+                    while (numRequests <= config.ebay.requestsPerDay) {
+                        randomEndingTime = misc.randomTimeObservation(config.ebay.history);
+                        sites.forEach(function (site) {
+                            site.topCategories.forEach(function (cat) {
+                                var title = "Find completed items for site " +
+                                    site.globalId + " in category " +
+                                    cat.CategoryName;
+                                jobs.create('findCompletedItems', {
+                                    title: title,
+                                    category: cat.CategoryID,
+                                    globalId: site.globalId,
+                                    endTime: randomEndingTime.toISOString()
+                                }).save();
+                            });
+                        });
+                        numRequests = numRequests + eachTimeObservationRequests;
+                    }
+                    logger.warn("Quota for today exceeded (" + numRequests + "), stop scheduling");
+                    return db.setTodayPlannedNumberOfRequests(numRequests - eachTimeObservationRequests);
+                });
         }, function (err) {
             logger.error(err.stack);
         });

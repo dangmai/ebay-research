@@ -22,7 +22,9 @@
     "underscore": "*",
     "optimist": "*",
     "kue": "*",
-    "timezone-js": "*"
+    "timezone-js": "*",
+    "date-utils": "*",
+    "redis": "0.7.2"
   },
   "devDependencies": {
     "mocha": "*",
