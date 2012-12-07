@@ -35,8 +35,10 @@ if (require.main === module) {  // called from CLI
         .usage("Scrape eBay.\nUsage: $0")
         .boolean("scheduler")
         .boolean("worker")
+        .boolean("webui")
         .describe("scheduler", "Start the scheduler and the WebUI interface")
         .describe("worker", "Start the worker")
+        .describe("webui", "Start the WebUI only")
         .argv;
     // Setting up stuffs that are shared between scheduler and worker
     logger.add(logger.transports.File, { filename: 'log.txt' });
@@ -48,6 +50,8 @@ if (require.main === module) {  // called from CLI
         startScheduler();
     } else if (argv.worker) {
         startWorker();
+    } else if (argv.webui) {
+        startWebUI();
     } else {
         optimist.showHelp();
     }
