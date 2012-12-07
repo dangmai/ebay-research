@@ -33,7 +33,11 @@ var startWorker = function () {
 
 var startAnalyzing = function () {
     logger.info("Start analyzing");
-    analyst.analyze();
+    analyst.analyze()
+        .then(function () {
+            logger.info("Analyzing done");
+            process.exit();
+        });
 };
 
 if (require.main === module) {  // called from CLI

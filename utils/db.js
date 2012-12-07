@@ -211,6 +211,21 @@ var insertListing = function (listing) {
     return deferred.promise;
 };
 
+/**
+ * Get all the ending times that we choose to observe.
+ * @return a promise for the list of all the ending time strings.
+ */
+var getDistinctTimesObserved = function () {
+    var deferred = Q.defer();
+    db.collection("listings").distinct("timeObserved", function (err, endingTimes) {
+        if (err) {
+            deferred.reject(new Error(err));
+        }
+        deferred.resolve(endingTimes);
+    });
+    return deferred.promise;
+};
+
 var close = function () {
     db.close();
 };
@@ -223,4 +238,5 @@ module.exports.setTodayPlannedNumberOfRequests = setTodayPlannedNumberOfRequests
 module.exports.getTodayActualNumberOfRequests = getTodayActualNumberOfRequests;
 module.exports.incrementTodayActualNumberOfRequests = incrementTodayActualNumberOfRequests;
 module.exports.insertListing = insertListing;
+module.exports.getDistinctTimesObserved = getDistinctTimesObserved;
 module.exports.close = close;
