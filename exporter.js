@@ -73,6 +73,18 @@ var addNecessaryFields = function () {
     addField("title", function (listing) {
         return listing.title;
     });
+    addField("condition", function (listing) {
+        if (listing.condition) {
+            return listing.condition.conditionId;
+        }
+        return null;
+    });
+    addField("conditionDisplayName", function (listing) {
+        if (listing.condition) {
+            return listing.condition.conditionDisplayName;
+        }
+        return null;
+    });
     addField("country", function (listing) {
         return listing.country;
     });
@@ -138,6 +150,19 @@ var addNecessaryFields = function () {
     addField("bidCount", function (listing) {
         return listing.sellingStatus.bidCount;
     });
+    addField("endingPrice", function (listing) {
+        // the field is called convertedCurrentPrice; however, as the listings
+        // have all been finished, this is the ending price for the listing.
+        // Also, the converted current price currency depends on the eBay site 
+        // that we polled
+        var priceObj = listing.sellingStatus.convertedCurrentPrice,
+            key;
+        for (key in priceObj) {  // Get the first value of this object
+            if (priceObj.hasOwnProperty(key)) {
+                return priceObj[key];
+            }
+        }
+    });
     addField("topRatedListing", function (listing) {
         return listing.topRatedListing;
     });
@@ -169,7 +194,7 @@ var exportToCsv = function () {
         if (err) {
             deferred.reject(new Error(err));
         }
-        if (listing === null || counter === 60) {
+        if (listing === null) {
             Q.all(promises).then(function () {
                 writer.addListener('drain', function () {
                     // Only resolve when writer has finished writing
