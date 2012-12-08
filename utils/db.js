@@ -133,6 +133,7 @@ var getTopParentCategory = function (globalId, childCategoryId) {
                 })[0];
             }
             if (!childCategory || !childCategory.CategoryParentID) {
+                logger.debug(childCategory);
                 throw new Error("Cannot find top parent category for category " + childCategoryId);
             }
             return childCategory.CategoryParentID;
