@@ -137,9 +137,9 @@ var addNecessaryFields = function () {
     addField("globalId", function (listing) {
         return listing.globalId;
     });
-    // addField("requestedGlobalId", function (listing) {
-    //     return listing.requestedGlobalId;
-    // });
+    addField("requestedGlobalId", function (listing) {
+        return listing.requestedGlobalId;
+    });
     addField("bidCount", function (listing) {
         return listing.sellingStatus.bidCount;
     });
