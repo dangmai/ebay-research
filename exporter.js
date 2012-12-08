@@ -210,8 +210,7 @@ var exportToCsv = function () {
                 }, function (err) {
                     logger.error(err);
                 });
-            }
-            if (acceptListing(listing)) {
+            } else if (acceptListing(listing)) {
                 rowPromise = generateRow(listing);
                 rowPromise.then(function (row) {
                     logger.debug("Writing row to CSV file");
