@@ -57,15 +57,23 @@ var generateRow = function (listing) {
  */
 var addNecessaryFields = function () {
     addField("category", function (listing) {
-        // Here we use the requested globalId instead of the actual globalId.
-        // This is because sometimes there are cross-listings across multiple
-        // eBay sites (e.g. an item in EBAY-AU Appliances might be bought in
-        // EBAY-US if it is offered worldwide). This happens when the 2 sites
-        // share the same category, so it is safe to traverse the category of
-        // the requested site, instead of having to download the actual site's
-        // category structure.
-        return db.getTopParentCategory(listing.requestedGlobalId,
-            listing.primaryCategory.categoryId);
+        // Make sure the local categories for the listing's globalId exists
+        // first. If it is not, get it from eBay before trying to find the
+        // top parent category.
+        return db.getLocalCategories(listing.globalId)
+            .then(function (siteCategories) {
+                if (siteCategories) {
+                    return db.getTopParentCategory(listing.globalId,
+                        listing.primaryCategory.categoryId);
+                }
+                return db.updateLocalCategories(listing.globalId)
+                    .then(function () {
+                        return db.getTopParentCategory(listing.globalId,
+                            listing.primaryCategory.categoryId);
+                    }, function (err) {
+                        logger.error(err.stack);
+                    });
+            });
     });
     addField("id", function (listing) {
         return listing.itemId;
