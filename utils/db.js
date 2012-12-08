@@ -252,6 +252,38 @@ var getDistinctTimesObserved = function () {
 };
 
 /**
+ * Get all the distinct globalIds in our dataset.
+ * @return a promise for the list of all the globalIds.
+ */
+var getDistinctGlobalIds = function () {
+    var deferred = Q.defer();
+    db.collection("listings").distinct("globalId", function (err, globalIds) {
+        if (err) {
+            deferred.reject(new Error(err));
+        }
+        deferred.resolve(globalIds);
+    });
+    return deferred.promise;
+};
+
+/**
+ * Get the list of sites whose category structures that we have available locally.
+ * @return the promise of the list of sites' globalIds.
+ */
+var getAvailableLocalSites = function () {
+    var deferred = Q.defer();
+    db.collection('categories').find().toArray(function (err, siteCategories) {
+        if (err) {
+            deferred.reject(err);
+        }
+        deferred.resolve(siteCategories.map(function (site) {
+            return site.globalId;
+        }));
+    });
+    return deferred.promise;
+};
+
+/**
  * Get the cursor for listings collection.
  * @return the cursor object.
  */
@@ -275,6 +307,8 @@ module.exports.getTodayActualNumberOfRequests = getTodayActualNumberOfRequests;
 module.exports.incrementTodayActualNumberOfRequests = incrementTodayActualNumberOfRequests;
 module.exports.insertListing = insertListing;
 module.exports.getDistinctTimesObserved = getDistinctTimesObserved;
+module.exports.getDistinctGlobalIds = getDistinctGlobalIds;
+module.exports.getAvailableLocalSites = getAvailableLocalSites;
 module.exports.getTopParentCategory = getTopParentCategory;
 module.exports.getListingCursor = getListingCursor;
 module.exports.close = close;

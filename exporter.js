@@ -57,23 +57,8 @@ var generateRow = function (listing) {
  */
 var addNecessaryFields = function () {
     addField("category", function (listing) {
-        // Make sure the local categories for the listing's globalId exists
-        // first. If it is not, get it from eBay before trying to find the
-        // top parent category.
-        return db.getLocalCategories(listing.globalId)
-            .then(function (siteCategories) {
-                if (siteCategories) {
-                    return db.getTopParentCategory(listing.globalId,
-                        listing.primaryCategory.categoryId);
-                }
-                return db.updateLocalCategories(listing.globalId)
-                    .then(function () {
-                        return db.getTopParentCategory(listing.globalId,
-                            listing.primaryCategory.categoryId);
-                    }, function (err) {
-                        logger.error(err.stack);
-                    });
-            });
+        return db.getTopParentCategory(listing.globalId,
+            listing.primaryCategory.categoryId);
     });
     addField("id", function (listing) {
         return listing.itemId;
@@ -152,9 +137,9 @@ var addNecessaryFields = function () {
     addField("globalId", function (listing) {
         return listing.globalId;
     });
-    addField("requestedGlobalId", function (listing) {
-        return listing.requestedGlobalId;
-    });
+    // addField("requestedGlobalId", function (listing) {
+    //     return listing.requestedGlobalId;
+    // });
     addField("bidCount", function (listing) {
         return listing.sellingStatus.bidCount;
     });
@@ -196,35 +181,51 @@ var exportToCsv = function () {
         writer = csv.createCsvFileWriter(config.general.csv),
         counter = 0; // debug
 
-    addNecessaryFields();
-    writer.writeRecord(headerRow);
-    cursor.each(function (err, listing) {
-        if (err) {
-            deferred.reject(new Error(err));
-        }
-        if (listing === null) {
-            Q.all(promises).then(function () {
-                writer.addListener('drain', function () {
-                    // Only resolve when writer has finished writing
-                    // BEWARE there might be a problem here, in which
-                    // the script writes faster than row is being added!
-                    deferred.resolve(true);
+    return Q.spread([
+        db.getDistinctGlobalIds(),
+        db.getAvailableLocalSites()
+    ], function (allGlobalIds, availableGlobalIds) {
+        var updatePromises = [];
+        allGlobalIds.forEach(function (globalId) {
+            if (availableGlobalIds.indexOf(globalId) === -1) {
+                updatePromises.push(db.updateLocalCategories(globalId));
+            }
+        });
+        return Q.all(updatePromises);
+    }).then(function () {
+        addNecessaryFields();
+        writer.writeRecord(headerRow);
+        cursor.each(function (err, listing) {
+            if (err) {
+                deferred.reject(new Error(err));
+            }
+            if (listing === null) {
+                Q.all(promises).then(function () {
+                    writer.addListener('drain', function () {
+                        // Only resolve when writer has finished writing
+                        // BEWARE there might be a problem here, in which
+                        // the script writes faster than row is being added!
+                        deferred.resolve(true);
+                    });
+                }, function (err) {
+                    logger.error(err);
                 });
-            }, function (err) {
-                logger.error(err);
-            });
-        }
-        if (acceptListing(listing)) {
-            rowPromise = generateRow(listing);
-            rowPromise.then(function (row) {
-                logger.debug("Writing row to CSV file");
-                writer.writeRecord(row);
-            });
-            promises.push(rowPromise);
-        }
-        counter = counter + 1;
+            }
+            if (acceptListing(listing)) {
+                rowPromise = generateRow(listing);
+                rowPromise.then(function (row) {
+                    logger.debug("Writing row to CSV file");
+                    writer.writeRecord(row);
+                });
+                promises.push(rowPromise);
+            }
+            counter = counter + 1;
+        });
+        return deferred.promise;
+    }, function (err) {
+        logger.error(err.stack);
+        process.exit(1);
     });
-    return deferred.promise;
 };
 
 module.exports.exportToCsv = exportToCsv;
