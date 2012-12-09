@@ -293,7 +293,7 @@ var exportToCsv = function () {
                 logger.info(counter + " objects were accepted");
                 Q.all(promises).then(function () {
                     logger.debug("All promises are fulfilled");
-                    writer.end();
+                    writer.writeStream.end();
                     logger.debug("Write stream has ended");
                     deferred.resolve(true);
                 }, function (err) {
