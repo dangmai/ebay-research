@@ -58,6 +58,7 @@ if (require.main === module) {  // called from CLI
         .argv;
     // Setting up stuffs that are shared between scheduler and worker
     // logger.add(logger.transports.File, { filename: 'log.txt' });
+    logger.setLevels(logger.config.syslog.levels);
     logger.remove(logger.transports.Console);
     logger.add(logger.transports.Console, {
         level: config.general.log_level,
