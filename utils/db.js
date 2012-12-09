@@ -127,7 +127,7 @@ var updateLocalCategories = function (globalId) {
  * @return a promise for the id of the top category
  */
 var getTopParentCategory = function (globalId, childCategoryId) {
-    Q.when(getLocalCategories(globalId), function (siteCategories) {
+    return Q.when(getLocalCategories(globalId), function (siteCategories) {
         var categories = siteCategories.data.CategoryArray.Category,
             childCategory;
         childCategory = categories.filter(function (category) {

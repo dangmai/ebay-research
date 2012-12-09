@@ -155,14 +155,14 @@ var addNecessaryFields = function () {
         return listing.listingInfo.buyItNowAvailable;
     });
     addField("buyItNowPriceCurrency", function (listing) {
-        if (listing.convertedBuyItNowPrice) {
+        if (listing.listingInfo.convertedBuyItNowPrice) {
             return getKeyValue(listing.convertedBuyItNowPrice)[0];
         }
         return null;
     });
     addField("buyItNowPrice", function (listing) {
         // see notes for endingPrice
-        if (listing.convertedBuyItNowPrice) {
+        if (listing.listingInfo.convertedBuyItNowPrice) {
             return getKeyValue(listing.convertedBuyItNowPrice)[1];
         }
         return null;
@@ -228,31 +228,31 @@ var addNecessaryFields = function () {
     // More info about discountPriceInfo field here:
     // http://developer.ebay.com/DevZone/XML/docs/WebHelp/wwhelp/wwhimpl/js/html/wwhelp.htm?context=eBay_XML_API&topic=DiscountPricing
     addField("discount:originalRetailPriceCurrency", function (listing) {
-        if (listing.dicountPriceInfo) {
+        if (listing.discountPriceInfo) {
             return getKeyValue(listing.discountPriceInfo.originalRetailPrice)[0];
         }
         return null;
     });
     addField("discount:originalRetailPrice", function (listing) {
-        if (listing.dicountPriceInfo) {
+        if (listing.discountPriceInfo) {
             return getKeyValue(listing.discountPriceInfo.originalRetailPrice)[1];
         }
         return null;
     });
     addField("discount:pricingTreatment", function (listing) {
-        if (listing.dicountPriceInfo) {
+        if (listing.discountPriceInfo) {
             return listing.discountPriceInfo.pricingTreatment;
         }
         return null;
     });
     addField("discount:soldOnEbay", function (listing) {
-        if (listing.dicountPriceInfo) {
+        if (listing.discountPriceInfo) {
             return listing.discountPriceInfo.soldOnEbay;
         }
         return null;
     });
     addField("discount:soldOffEbay", function (listing) {
-        if (listing.dicountPriceInfo) {
+        if (listing.discountPriceInfo) {
             return listing.discountPriceInfo.soldOffEbay;
         }
         return null;
@@ -289,6 +289,7 @@ var exportToCsv = function () {
                 deferred.reject(new Error(err));
             }
             if (listing === null) {
+                logger.info("No more objects to inspect in the database");
                 Q.all(promises).then(function () {
                     writer.addListener('drain', function () {
                         // Only resolve when writer has finished writing
