@@ -59,7 +59,10 @@ if (require.main === module) {  // called from CLI
     // Setting up stuffs that are shared between scheduler and worker
     // logger.add(logger.transports.File, { filename: 'log.txt' });
     logger.remove(logger.transports.Console);
-    logger.add(logger.transports.Console, { colorize: true });
+    logger.add(logger.transports.Console, {
+        level: config.general.log_level,
+        colorize: true
+    });
 
     // Running the required component(s)
     if (argv.scheduler) {

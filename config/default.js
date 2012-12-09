@@ -20,6 +20,7 @@ module.exports = {
         requestsPerDay: 4900
     },
     general: {
-        csv: "output.csv"
+        csv: "output.csv",
+        log_level: "debug"
     }
 };
