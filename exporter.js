@@ -290,13 +290,11 @@ var exportToCsv = function () {
             }
             if (listing === null) {
                 logger.info("No more objects to inspect in the database");
+                logger.info(counter + "objects were accepted");
                 Q.all(promises).then(function () {
-                    writer.addListener('drain', function () {
-                        // Only resolve when writer has finished writing
-                        // BEWARE there might be a problem here, in which
-                        // the script writes faster than row is being added!
-                        deferred.resolve(true);
-                    });
+                    logger.debug("All promises are fulfilled");
+                    writer.end();
+                    deferred.resolve(true);
                 }, function (err) {
                     logger.error(err);
                 });
@@ -307,8 +305,8 @@ var exportToCsv = function () {
                     writer.writeRecord(row);
                 });
                 promises.push(rowPromise);
+                counter = counter + 1;
             }
-            counter = counter + 1;
         });
         return deferred.promise;
     }, function (err) {
