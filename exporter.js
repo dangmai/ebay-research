@@ -271,9 +271,11 @@ var exportToCsv = function () {
         counter = 0; // debug
 
     return Q.spread([
+        db.cursorCount(cursor),
         db.getDistinctGlobalIds(),
         db.getAvailableLocalSites()
-    ], function (allGlobalIds, availableGlobalIds) {
+    ], function (count, allGlobalIds, availableGlobalIds) {
+        logger.debug(count + " documents matching the find criteria");
         var updatePromises = [];
         allGlobalIds.forEach(function (globalId) {
             if (availableGlobalIds.indexOf(globalId) === -1) {

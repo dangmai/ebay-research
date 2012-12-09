@@ -298,6 +298,22 @@ var getListingCursor = function () {
 };
 
 /**
+ * Count the number of documents for a cursor.
+ * @param cursor the cursor object to count.
+ * @return a promise for the count number.
+ */
+var cursorCount = function (cursor) {
+    var deferred = Q.defer();
+    cursor.count(function (err, count) {
+        if (err) {
+            deferred.reject(new Error(err));
+        }
+        deferred.resolve(count);
+    });
+    return deferred.promise;
+};
+
+/**
  * Close the database connection
  */
 var close = function () {
@@ -317,4 +333,5 @@ module.exports.getDistinctGlobalIds = getDistinctGlobalIds;
 module.exports.getAvailableLocalSites = getAvailableLocalSites;
 module.exports.getTopParentCategory = getTopParentCategory;
 module.exports.getListingCursor = getListingCursor;
+module.exports.cursorCount = cursorCount;
 module.exports.close = close;
