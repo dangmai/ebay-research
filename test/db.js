@@ -17,13 +17,14 @@ describe("getTopParentCategory", function () {
     });
 });
 
-describe.only("cursor", function () {
+describe("cursor", function () {
     it("should get all the documents as specified by cursor count()", function (done) {
         this.timeout(0);
         var cursor = db.getListingCursor(),
             counter = 0;
         db.cursorCount(cursor)
             .then(function (count) {
+                console.log("Cursor count: " + count);
                 cursor.each(function (err, listing) {
                     if (err) {
                         done(err);
