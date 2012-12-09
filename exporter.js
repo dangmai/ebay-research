@@ -156,14 +156,14 @@ var addNecessaryFields = function () {
     });
     addField("buyItNowPriceCurrency", function (listing) {
         if (listing.listingInfo.convertedBuyItNowPrice) {
-            return getKeyValue(listing.convertedBuyItNowPrice)[0];
+            return getKeyValue(listing.listingInfo.convertedBuyItNowPrice)[0];
         }
         return null;
     });
     addField("buyItNowPrice", function (listing) {
         // see notes for endingPrice
         if (listing.listingInfo.convertedBuyItNowPrice) {
-            return getKeyValue(listing.convertedBuyItNowPrice)[1];
+            return getKeyValue(listing.listingInfo.convertedBuyItNowPrice)[1];
         }
         return null;
     });
