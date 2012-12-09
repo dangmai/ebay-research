@@ -290,10 +290,11 @@ var exportToCsv = function () {
             }
             if (listing === null) {
                 logger.info("No more objects to inspect in the database");
-                logger.info(counter + "objects were accepted");
+                logger.info(counter + " objects were accepted");
                 Q.all(promises).then(function () {
                     logger.debug("All promises are fulfilled");
                     writer.end();
+                    logger.debug("Write stream has ended");
                     deferred.resolve(true);
                 }, function (err) {
                     logger.error(err);
@@ -308,10 +309,8 @@ var exportToCsv = function () {
                 counter = counter + 1;
             }
         });
+        logger.debug("About to return the deferred promise for exportToCsv");
         return deferred.promise;
-    }, function (err) {
-        logger.error(err.stack);
-        process.exit(1);
     });
 };
 
