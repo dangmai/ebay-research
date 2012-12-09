@@ -3,12 +3,9 @@
 
 var logger = require("winston");
 var optimist = require("optimist");
-var scheduler = require("./scheduler");
-var worker = require("./worker");
 var config = require('config');
 var db = require("./utils/db");
 var misc = require("./utils/misc");
-var exporter = require("./exporter");
 
 var startWebUI = function () {
     var kue = require("kue");
@@ -17,6 +14,7 @@ var startWebUI = function () {
 };
 
 var startScheduler = function () {
+    var scheduler = require("./scheduler");
     logger.info("Scheduler started");
     startWebUI();
     scheduler.schedule()
@@ -27,11 +25,13 @@ var startScheduler = function () {
 };
 
 var startWorker = function () {
+    var worker = require("./worker");
     logger.info("Worker started");
     worker.process();
 };
 
 var startExporting = function () {
+    var exporter = require("./exporter");
     logger.info("Start analyzing and exporting data");
     exporter.exportToCsv()
         .then(function () {

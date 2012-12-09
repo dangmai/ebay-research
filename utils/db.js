@@ -30,6 +30,9 @@ db.collection("listings").ensureIndex({ timeObserved: 1}, function (err) {
     }
 });
 
+// So that we don't have to poll MongoDB everytime a category structure is needed
+var categoryCache = {};
+
 /**
  * Get the local category structure for an ebay site.
  * @param String globalId the GlobalId for the ebay site.
@@ -37,12 +40,17 @@ db.collection("listings").ensureIndex({ timeObserved: 1}, function (err) {
  */
 var getLocalCategories = function (globalId) {
     logger.info("Get local categories from site with GlobalId " + globalId);
+    if (categoryCache[globalId]) {
+        logger.debug("Category existed within cache. Returning now!");
+        return categoryCache[globalId];
+    }
     var deferred = Q.defer();
     db.collection('categories').findOne({globalId: globalId},
         function (err, siteCategories) {
             if (err) {
                 deferred.reject(err);
             }
+            categoryCache[globalId] = siteCategories;
             deferred.resolve(siteCategories);
         });
     return deferred.promise;
@@ -54,13 +62,12 @@ var getLocalCategories = function (globalId) {
  * @return Promise a promise for the hash of all the top categories.
  */
 var getTopCategories = function (globalId) {
-    return getLocalCategories(globalId)
-        .then(function (categories) {
-            var allCategories = categories.data.CategoryArray.Category;
-            return allCategories.filter(function (category) {
-                return (category.CategoryLevel === "1" && !category.Expired);
-            });
+    return Q.when(getLocalCategories(globalId), function (categories) {
+        var allCategories = categories.data.CategoryArray.Category;
+        return allCategories.filter(function (category) {
+            return (category.CategoryLevel === "1" && !category.Expired);
         });
+    });
 };
 
 /**
@@ -120,24 +127,23 @@ var updateLocalCategories = function (globalId) {
  * @return a promise for the id of the top category
  */
 var getTopParentCategory = function (globalId, childCategoryId) {
-    return getLocalCategories(globalId)
-        .then(function (siteCategories) {
-            var categories = siteCategories.data.CategoryArray.Category,
-                childCategory;
+    Q.when(getLocalCategories(globalId), function (siteCategories) {
+        var categories = siteCategories.data.CategoryArray.Category,
+            childCategory;
+        childCategory = categories.filter(function (category) {
+            return category.CategoryID === childCategoryId.toString();
+        })[0];
+        while (childCategory && childCategory.CategoryID !== childCategory.CategoryParentID) {
             childCategory = categories.filter(function (category) {
-                return category.CategoryID === childCategoryId.toString();
+                return category.CategoryID === childCategory.CategoryParentID;
             })[0];
-            while (childCategory && childCategory.CategoryID !== childCategory.CategoryParentID) {
-                childCategory = categories.filter(function (category) {
-                    return category.CategoryID === childCategory.CategoryParentID;
-                })[0];
-            }
-            if (!childCategory || !childCategory.CategoryParentID) {
-                logger.debug(childCategory);
-                throw new Error("Cannot find top parent category for category " + childCategoryId);
-            }
-            return childCategory.CategoryParentID;
-        });
+        }
+        if (!childCategory || !childCategory.CategoryParentID) {
+            logger.debug(childCategory);
+            throw new Error("Cannot find top parent category for category " + childCategoryId);
+        }
+        return childCategory.CategoryParentID;
+    });
 };
 
 /**

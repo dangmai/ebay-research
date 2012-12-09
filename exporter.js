@@ -53,18 +53,41 @@ var generateRow = function (listing) {
 };
 
 /**
+ * Helper function to get the key-value of an object, without knowing the key.
+ * This assumes that there is only one property inside the object!
+ * @param obj the object to get the key-value from
+ * @returns an array with 2 elements: the first is the key, the second is the
+ * value.
+ */
+var getKeyValue = function (obj) {
+    var key;
+    for (key in obj) {  // Get the first key of this object
+        return [key, obj[key]];
+    }
+};
+
+/**
  * Add all the necessary fields to the CSV file
  */
 var addNecessaryFields = function () {
-    addField("category", function (listing) {
+    addField("topCategory", function (listing) {
         return db.getTopParentCategory(listing.globalId,
             listing.primaryCategory.categoryId);
+    });
+    addField("numCategories", function (listing) {
+        if (listing.secondaryCategory) {
+            return 2;
+        }
+        return 1;
     });
     addField("id", function (listing) {
         return listing.itemId;
     });
     addField("title", function (listing) {
         return listing.title;
+    });
+    addField("subtitle", function (listing) {
+        return listing.subtitle;
     });
     addField("condition", function (listing) {
         if (listing.condition) {
@@ -93,7 +116,7 @@ var addNecessaryFields = function () {
     addField("topRatedSeller", function (listing) {
         return listing.sellerInfo.topRatedSeller;
     });
-    addField("shipToLocation", function (listing) {
+    addField("shipToLocations", function (listing) {
         return listing.shippingInfo.shipToLocations;
     });
     addField("oneDayShippingAvailable", function (listing) {
@@ -131,6 +154,19 @@ var addNecessaryFields = function () {
     addField("buyItNowAvailable", function (listing) {
         return listing.listingInfo.buyItNowAvailable;
     });
+    addField("buyItNowPriceCurrency", function (listing) {
+        if (listing.convertedBuyItNowPrice) {
+            return getKeyValue(listing.convertedBuyItNowPrice)[0];
+        }
+        return null;
+    });
+    addField("buyItNowPrice", function (listing) {
+        // see notes for endingPrice
+        if (listing.convertedBuyItNowPrice) {
+            return getKeyValue(listing.convertedBuyItNowPrice)[1];
+        }
+        return null;
+    });
     addField("gift", function (listing) {
         return listing.listingInfo.gift;
     });
@@ -143,21 +179,39 @@ var addNecessaryFields = function () {
     addField("bidCount", function (listing) {
         return listing.sellingStatus.bidCount;
     });
+    addField("endingPriceCurrency", function (listing) {
+        return getKeyValue(listing.sellingStatus.convertedCurrentPrice)[0];
+    });
     addField("endingPrice", function (listing) {
         // the field is called convertedCurrentPrice; however, as the listings
         // have all been finished, this is the ending price for the listing.
         // Also, the converted current price currency depends on the eBay site 
         // that we polled
-        var priceObj = listing.sellingStatus.convertedCurrentPrice,
-            key;
-        for (key in priceObj) {  // Get the first value of this object
-            if (priceObj.hasOwnProperty(key)) {
-                return priceObj[key];
-            }
+        return getKeyValue(listing.sellingStatus.convertedCurrentPrice)[1];
+    });
+    addField("productId", function (listing) {
+        var productObj = listing.productId;
+        if (productObj) {
+            return getKeyValue(listing.productId).join(":");
         }
+        return null;
+    });
+    addField("numPaymentMethods", function (listing) {
+        // The payment method could be an Array or a String, so this is a
+        // quick workaround to find the number of elements there.
+        if (listing.paymentMethods) {
+            return [].concat[listing.paymentMethods].length;
+        }
+        return 0;
     });
     addField("topRatedListing", function (listing) {
         return listing.topRatedListing;
+    });
+    addField("expeditedShipping", function (listing) {
+        if (listing.expeditedShipping) {
+            return true;
+        }
+        return false;
     });
     addField("isMultiVariationListing", function (listing) {
         return listing.isMultiVariationListing;
@@ -165,8 +219,43 @@ var addNecessaryFields = function () {
     addField("autoPay", function (listing) {
         return listing.autoPay;
     });
+    addField("charityId", function (listing) {
+        return listing.charityId;
+    });
     addField("itemURL", function (listing) {
         return listing.viewItemURL;
+    });
+    // More info about discountPriceInfo field here:
+    // http://developer.ebay.com/DevZone/XML/docs/WebHelp/wwhelp/wwhimpl/js/html/wwhelp.htm?context=eBay_XML_API&topic=DiscountPricing
+    addField("discount:originalRetailPriceCurrency", function (listing) {
+        if (listing.dicountPriceInfo) {
+            return getKeyValue(listing.discountPriceInfo.originalRetailPrice)[0];
+        }
+        return null;
+    });
+    addField("discount:originalRetailPrice", function (listing) {
+        if (listing.dicountPriceInfo) {
+            return getKeyValue(listing.discountPriceInfo.originalRetailPrice)[1];
+        }
+        return null;
+    });
+    addField("discount:pricingTreatment", function (listing) {
+        if (listing.dicountPriceInfo) {
+            return listing.discountPriceInfo.pricingTreatment;
+        }
+        return null;
+    });
+    addField("discount:soldOnEbay", function (listing) {
+        if (listing.dicountPriceInfo) {
+            return listing.discountPriceInfo.soldOnEbay;
+        }
+        return null;
+    });
+    addField("discount:soldOffEbay", function (listing) {
+        if (listing.dicountPriceInfo) {
+            return listing.discountPriceInfo.soldOffEbay;
+        }
+        return null;
     });
 };
 
