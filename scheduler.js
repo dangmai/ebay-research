@@ -18,7 +18,7 @@ var done = function () {
 };
 
 var schedule = function () {
-    var countries = config.ebay.countries,
+    var countries = Object.keys(config.ebay.countries),
         updateRequests = [],
         kueErrorHandler;
 

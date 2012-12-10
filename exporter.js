@@ -2,6 +2,7 @@
 "use strict";
 
 var db = require("./utils/db");
+var misc = require("./utils/misc");
 var logger = require("winston");
 var Q = require("q");
 var csv = require("ya-csv");
@@ -64,6 +65,17 @@ var categoryMapper = [];
  * Add all the necessary fields to the CSV file
  */
 var addNecessaryFields = function () {
+    var weekdays,
+        booleanField;
+    booleanField = function (value) {
+        // return Stata boolean format from BSON
+        if (value && value.toString().toLowerCase() === "false") {
+            return 0;
+        } else if (value && value.toString().toLowerCase() === "true") {
+            return 1;
+        }
+        return value;
+    };
     addField("topCategory", function (listing) {
         // This returns a "normalized" index for all the categories that exist
         // in the dataset
@@ -101,11 +113,11 @@ var addNecessaryFields = function () {
     addField("id", function (listing) {
         return listing.itemId;
     });
-    addField("title", function (listing) {
-        return listing.title;
-    });
     addField("subtitle", function (listing) {
-        return listing.subtitle;
+        if (listing.subtitle) {
+            return 1;
+        }
+        return 0;
     });
     addField("condition", function (listing) {
         if (listing.condition) {
@@ -132,22 +144,42 @@ var addNecessaryFields = function () {
         return listing.sellerInfo.feedbackRatingStar;
     });
     addField("topRatedSeller", function (listing) {
-        return listing.sellerInfo.topRatedSeller;
+        return booleanField(listing.sellerInfo.topRatedSeller);
     });
     addField("shipToLocations", function (listing) {
         return listing.shippingInfo.shipToLocations;
     });
+    addField("shipWorldwide", function (listing) {
+        if (listing.shippingInfo.shipToLocations === "Worldwide") {
+            return 1;
+        }
+        return 0;
+    });
     addField("oneDayShippingAvailable", function (listing) {
-        return listing.shippingInfo.oneDayShippingAvailable;
+        return booleanField(listing.shippingInfo.oneDayShippingAvailable);
     });
     addField("handlingTime", function (listing) {
         return listing.shippingInfo.handlingTime;
     });
     addField("returnsAccepted", function (listing) {
-        return listing.returnsAccepted;
+        return booleanField(listing.returnsAccepted);
+    });
+    weekdays = [
+        "Sunday",
+        "Monday",
+        "Tuesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+    ];
+    addField("numDayEnded", function (listing) {
+        return misc.toLocalDate(listing.listingInfo.endTime,
+            config.ebay.countries[listing.requestedGlobalId]).getDay();
     });
     addField("dayEnded", function (listing) {
-        return new Date(listing.listingInfo.endTime).getDay();
+        return weekdays[misc.toLocalDate(listing.listingInfo.endTime,
+            config.ebay.countries[listing.requestedGlobalId]).getDay()];
     });
     addField("startTime", function (listing) {
         return listing.listingInfo.startTime;
@@ -161,16 +193,16 @@ var addNecessaryFields = function () {
     addField("listingDuration", function (listing) {
         var startDate = new Date(listing.listingInfo.startTime),
             endDate = new Date(listing.listingInfo.endTime);
-        return startDate.getSecondsBetween(endDate);
+        return startDate.getDaysBetween(endDate);
     });
     addField("listingType", function (listing) {
         return listing.listingInfo.listingType;
     });
     addField("bestOfferEnabled", function (listing) {
-        return listing.listingInfo.bestOfferEnabled;
+        return booleanField(listing.listingInfo.bestOfferEnabled);
     });
     addField("buyItNowAvailable", function (listing) {
-        return listing.listingInfo.buyItNowAvailable;
+        return booleanField(listing.listingInfo.buyItNowAvailable);
     });
     addField("buyItNowPriceCurrency", function (listing) {
         if (listing.listingInfo.convertedBuyItNowPrice) {
@@ -184,9 +216,6 @@ var addNecessaryFields = function () {
             return getKeyValue(listing.listingInfo.convertedBuyItNowPrice)[1];
         }
         return null;
-    });
-    addField("gift", function (listing) {
-        return listing.listingInfo.gift;
     });
     addField("globalId", function (listing) {
         return listing.globalId;
@@ -217,25 +246,22 @@ var addNecessaryFields = function () {
     addField("numPaymentMethods", function (listing) {
         // The payment method could be an Array or a String, so this is a
         // quick workaround to find the number of elements there.
-        if (listing.paymentMethods) {
-            return [].concat[listing.paymentMethods].length;
+        if (listing.paymentMethod) {
+            return [].concat(listing.paymentMethod).length;
         }
         return 0;
     });
     addField("topRatedListing", function (listing) {
-        return listing.topRatedListing;
+        return booleanField(listing.topRatedListing);
     });
     addField("expeditedShipping", function (listing) {
-        if (listing.expeditedShipping) {
-            return true;
-        }
-        return false;
+        return booleanField(listing.shippingInfo.expeditedShipping);
     });
     addField("isMultiVariationListing", function (listing) {
-        return listing.isMultiVariationListing;
+        return booleanField(listing.isMultiVariationListing);
     });
     addField("autoPay", function (listing) {
-        return listing.autoPay;
+        return booleanField(listing.autoPay);
     });
     addField("charityId", function (listing) {
         return listing.charityId;
@@ -265,13 +291,13 @@ var addNecessaryFields = function () {
     });
     addField("discount:soldOnEbay", function (listing) {
         if (listing.discountPriceInfo) {
-            return listing.discountPriceInfo.soldOnEbay;
+            return booleanField(listing.discountPriceInfo.soldOnEbay);
         }
         return null;
     });
     addField("discount:soldOffEbay", function (listing) {
         if (listing.discountPriceInfo) {
-            return listing.discountPriceInfo.soldOffEbay;
+            return booleanField(listing.discountPriceInfo.soldOffEbay);
         }
         return null;
     });

@@ -23,6 +23,13 @@ var todayInPST = function () {
 };
 
 /**
+ * Return a timezone-aware Date object.
+ */
+var toLocalDate = function (dateString, timezone) {
+    return new timezoneJS.Date(dateString, timezone);
+};
+
+/**
  * Returns a random integer between min and max
  * @param min the lower bound
  * @param max the upper bound
@@ -57,5 +64,6 @@ var createRedisClient = function () {
 };
 
 module.exports.todayInPST = todayInPST;
+module.exports.toLocalDate = toLocalDate;
 module.exports.randomTimeObservation = randomTimeObservation;
 module.exports.createRedisClient = createRedisClient;
