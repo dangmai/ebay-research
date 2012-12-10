@@ -44,6 +44,7 @@ var generateRow = function (listing) {
             return fieldValue;
         }, function (err) {
             logger.error(err.stack);
+            return null;  // for weird cases that make no sense ...
         }));
     });
     return Q.all(fieldPromises).then(function (fieldValues) {

@@ -140,7 +140,8 @@ var getTopParentCategory = function (globalId, childCategoryId) {
         }
         if (!childCategory || !childCategory.CategoryParentID) {
             logger.debug(childCategory);
-            throw new Error("Cannot find top parent category for category " + childCategoryId);
+            throw new Error("Cannot find top parent category for category " +
+                childCategoryId + " in " + globalId);
         }
         return childCategory.CategoryParentID;
     });
