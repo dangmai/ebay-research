@@ -146,6 +146,21 @@ var addNecessaryFields = function () {
     addField("topRatedSeller", function (listing) {
         return booleanField(listing.sellerInfo.topRatedSeller);
     });
+    addField("shippingCostCurrency", function (listing) {
+        if (listing.shippingInfo.shippingServiceCost) {
+            return getKeyValue(listing.shippingInfo.shippingServiceCost)[0];
+        }
+    });
+    addField("shippingCost", function (listing) {
+        if (listing.shippingInfo.shippingServiceCost) {
+            return getKeyValue(listing.shippingInfo.shippingServiceCost)[1];
+        }
+    });
+    addField("shippingType", function (listing) {
+        if (listing.shippingInfo.shippingServiceCost) {
+            return listing.shippingInfo.shippingType;
+        }
+    });
     addField("shipToLocations", function (listing) {
         return listing.shippingInfo.shipToLocations;
     });
