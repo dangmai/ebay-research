@@ -363,7 +363,9 @@ var getAvailableLocalSites = function () {
  * @return the cursor object.
  */
 var getListingCursor = function () {
-    return db.collection("listings").find();
+    return db.collection("listings").find({
+        "sellingStatus.sellingState": "EndedWithSales"
+    });
 };
 
 /**

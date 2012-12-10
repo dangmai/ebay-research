@@ -6,15 +6,6 @@ var logger = require("winston");
 var Q = require("q");
 var csv = require("ya-csv");
 var config = require("config");
-
-/**
- * Determine whether or not to accept a listing.
- * @return Boolean
- */
-var acceptListing = function (listing) {
-    return listing.sellingStatus.sellingState === "EndedWithSales";
-};
-
 var fieldRegistry = [];
 var headerRow = [];
 
@@ -344,7 +335,7 @@ var exportToCsv = function () {
                     }, function (err) {
                         deferred.reject(err);
                     });
-            } else if (acceptListing(listing)) {
+            } else {
                 rowPromise = generateRow(listing);
                 rowPromise.then(function (row) {
                     logger.debug("Writing row to CSV file");
