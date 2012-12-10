@@ -79,7 +79,7 @@ var schedule = function () {
                         });
                         numRequests = numRequests + eachTimeObservationRequests;
                     }
-                    logger.warn("Quota for today exceeded (" + numRequests + "), stop scheduling");
+                    logger.warning("Quota for today exceeded (" + numRequests + "), stop scheduling");
                     return db.setTodayPlannedNumberOfRequests(numRequests - eachTimeObservationRequests);
                 });
         }, function (err) {
