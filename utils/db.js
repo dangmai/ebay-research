@@ -233,7 +233,43 @@ var incrementTodayActualNumberOfRequests = function () {
  */
 var insertListing = function (listing) {
     var deferred = Q.defer();
-    db.collection("listings").insert(listing,
+    db.collection("listings").update({ "itemId": listing.itemId },
+        listing,
+        { upsert: true},
+        function (err) {
+            if (err) {
+                deferred.reject(new Error(err));
+            }
+            deferred.resolve(true);
+        });
+    return deferred.promise;
+};
+
+/**
+ * Get a listing from the itemid
+ * @param itemId the itemId of the listing to search for
+ * @return a promise for the listing
+ */
+var getListing = function (itemId) {
+    var deferred = Q.defer();
+    db.collection("listings").findOne({ "itemId": itemId },
+        function (err, listing) {
+            if (err) {
+                deferred.reject(new Error(err));
+            }
+            deferred.resolve(listing);
+        });
+    return deferred.promise;
+};
+
+/**
+ * Remove a listing from the itemid
+ * @param itemId the itemId of the listing to search for
+ * @return a promise for the operation completion
+ */
+var removeListing = function (itemId) {
+    var deferred = Q.defer();
+    db.collection("listings").remove({ "itemId": itemId },
         function (err) {
             if (err) {
                 deferred.reject(new Error(err));
@@ -329,6 +365,8 @@ module.exports.setTodayPlannedNumberOfRequests = setTodayPlannedNumberOfRequests
 module.exports.getTodayActualNumberOfRequests = getTodayActualNumberOfRequests;
 module.exports.incrementTodayActualNumberOfRequests = incrementTodayActualNumberOfRequests;
 module.exports.insertListing = insertListing;
+module.exports.removeListing = removeListing;
+module.exports.getListing = getListing;
 module.exports.getDistinctTimesObserved = getDistinctTimesObserved;
 module.exports.getDistinctGlobalIds = getDistinctGlobalIds;
 module.exports.getAvailableLocalSites = getAvailableLocalSites;

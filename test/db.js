@@ -39,3 +39,33 @@ describe("cursor", function () {
             }, done);
     });
 });
+
+describe("listing", function () {
+    it("should upsert/get/remove listing correctly", function (done) {
+        this.timeout(0);
+        var id = "1616456464646";
+        db.insertListing({ itemId: id, value: "old" })
+            .then(function () {
+                return db.getListing(id);
+            })
+            .then(function (listing) {
+                expect(listing.value).to.equal("old");
+                return db.insertListing({ itemId: id, value: "new" });
+            })
+            .then(function () {
+                return db.getListing(id);
+            })
+            .then(function (listing) {
+                expect(listing.value).to.equal("new");
+                return db.removeListing(id);
+            })
+            .then(function () {
+                return db.getListing(id);
+            })
+            .then(function (listing) {
+                expect(listing).to.be.null;
+                done();
+            })
+            .fail(done);
+    });
+});
