@@ -67,19 +67,45 @@ var getKeyValue = function (obj) {
     }
 };
 
+var categoryMapper = [];
+
 /**
  * Add all the necessary fields to the CSV file
  */
 var addNecessaryFields = function () {
     addField("topCategory", function (listing) {
+        // This returns a "normalized" index for all the categories that exist
+        // in the dataset
         return db.getTopParentCategory(listing.globalId,
-            listing.primaryCategory.categoryId);
+            listing.primaryCategory.categoryId)
+            .then(function (topCategory) {
+                var categoryObj,
+                    index = -1;
+                categoryObj = {
+                    categoryId: topCategory,
+                    globalId: listing.globalId
+                };
+                categoryMapper.forEach(function (cat, cIndex) {
+                    if (cat.categoryId === topCategory) {
+                        // in the mapper already
+                        index = cIndex;
+                    }
+                });
+                if (index === -1) {
+                    // not in the mapper yet
+                    categoryMapper.push(categoryObj);
+                    index = categoryMapper.length - 1;
+                }
+                return index;
+            }, function (err) {
+                return null;
+            });
     });
-    addField("numCategories", function (listing) {
+    addField("secondaryCategory", function (listing) {
         if (listing.secondaryCategory) {
-            return 2;
+            return 1;
         }
-        return 1;
+        return 0;
     });
     addField("id", function (listing) {
         return listing.itemId;
@@ -268,7 +294,8 @@ var exportToCsv = function () {
         deferred = Q.defer(),
         promises = [],
         rowPromise,
-        writer = csv.createCsvFileWriter(config.general.csv),
+        writer = csv.createCsvFileWriter(config.general.main_output_location),
+        categoryWriter = csv.createCsvFileWriter(config.general.category_mapper_location),
         counter = 0; // debug
 
     return Q.spread([
@@ -294,14 +321,29 @@ var exportToCsv = function () {
             if (listing === null) {
                 logger.info("No more objects to inspect in the database");
                 logger.info(counter + " objects were accepted");
-                Q.all(promises).then(function () {
-                    logger.debug("All promises are fulfilled");
-                    writer.writeStream.end();
-                    logger.debug("Write stream has ended");
-                    deferred.resolve(true);
-                }, function (err) {
-                    logger.error(err);
-                });
+                Q.all(promises)
+                    .then(function () {
+                        logger.info("About to write category mapper file");
+                        var cPromises = categoryMapper.map(function (categoryObj) {
+                            return db.getCategoryName(categoryObj.globalId,
+                                categoryObj.categoryId);
+                        });
+                        return Q.all(cPromises);
+                    })
+                    .then(function (categories) {
+                        categories.forEach(function (category, index) {
+                            categoryWriter.writeRecord([index, category]);
+                        });
+                        categoryWriter.writeStream.end();
+                    })
+                    .then(function () {
+                        logger.debug("All promises are fulfilled");
+                        writer.writeStream.end();
+                        logger.debug("Write stream has ended");
+                        deferred.resolve(true);
+                    }, function (err) {
+                        deferred.reject(err);
+                    });
             } else if (acceptListing(listing)) {
                 rowPromise = generateRow(listing);
                 rowPromise.then(function (row) {

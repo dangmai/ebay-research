@@ -17,6 +17,17 @@ describe("getTopParentCategory", function () {
     });
 });
 
+describe("getCategoryName", function () {
+    it("should get the correct category name", function (done) {
+        this.timeout(0);
+        db.getCategoryName("EBAY-SG", "20081")
+            .then(function (name) {
+                expect(name).to.equal("Antiques");
+                done();
+            }, done);
+    });
+});
+
 describe("cursor", function () {
     it("should get all the documents as specified by cursor count()", function (done) {
         this.timeout(0);

@@ -11,6 +11,7 @@ var db = mongo.db(config.Mongo.address, { safe: true });
 db.collection("categories").ensureIndex({ globalId: 1 }, true, function (err) {
     if (err) {
         logger.error("Cannot ensure index for the categories collection");
+        logger.error(err);
         process.exit(2);
         db.close();
     }
@@ -18,6 +19,7 @@ db.collection("categories").ensureIndex({ globalId: 1 }, true, function (err) {
 db.collection("requests").ensureIndex({ date: 1 }, true, function (err) {
     if (err) {
         logger.error("Cannot ensure index for the requests collection");
+        logger.error(err);
         process.exit(2);
         db.close();
     }
@@ -25,6 +27,7 @@ db.collection("requests").ensureIndex({ date: 1 }, true, function (err) {
 db.collection("listings").ensureIndex({ timeObserved: 1, itemId: 1 }, function (err) {
     if (err) {
         logger.error("Cannot ensure index for the listings collection");
+        logger.error(err);
         process.exit(2);
         db.close();
     }
@@ -56,7 +59,7 @@ var getLocalCategories = function (globalId) {
     return deferred.promise;
 };
 
-/*
+/**
  * Given an eBay site, get the top categories from the local database.
  * @param String globalId the GlobalId of the site to use.
  * @return Promise a promise for the hash of all the top categories.
@@ -67,6 +70,19 @@ var getTopCategories = function (globalId) {
         return allCategories.filter(function (category) {
             return (category.CategoryLevel === "1" && !category.Expired);
         });
+    });
+};
+
+/**
+ * Get the name of a category given the ebay site and its id.
+ */
+var getCategoryName = function (globalId, categoryId) {
+    logger.debug("Getting category name for id " + categoryId + " in " + globalId);
+    return Q.when(getLocalCategories(globalId), function (categories) {
+        var allCategories = categories.data.CategoryArray.Category;
+        return allCategories.filter(function (category) {
+            return category.CategoryID === categoryId;
+        })[0].CategoryName;
     });
 };
 
@@ -120,6 +136,8 @@ var updateLocalCategories = function (globalId) {
     });
 };
 
+var topParentCategoryCache = {};
+
 /**
  * Find the top parent category of a certain category
  * @param globalId the site to search for
@@ -127,7 +145,15 @@ var updateLocalCategories = function (globalId) {
  * @return a promise for the id of the top category
  */
 var getTopParentCategory = function (globalId, childCategoryId) {
+    logger.debug("Getting top parent category");
     return Q.when(getLocalCategories(globalId), function (siteCategories) {
+        // Check the cache so that it doesn't have to traverse the object unnecessarily
+        if (topParentCategoryCache[globalId] && topParentCategoryCache[globalId][childCategoryId]) {
+            logger.debug("Returning top parent category from cache");
+            return Q.fcall(function () {
+                return topParentCategoryCache[globalId][childCategoryId];
+            });
+        }
         var categories = siteCategories.data.CategoryArray.Category,
             childCategory;
         childCategory = categories.filter(function (category) {
@@ -143,6 +169,10 @@ var getTopParentCategory = function (globalId, childCategoryId) {
             throw new Error("Cannot find top parent category for category " +
                 childCategoryId + " in " + globalId);
         }
+        if (!topParentCategoryCache[globalId]) {
+            topParentCategoryCache[globalId] = {};
+        }
+        topParentCategoryCache[globalId][childCategoryId] = childCategory.CategoryParentID;
         return childCategory.CategoryParentID;
     });
 };
@@ -299,6 +329,7 @@ var getDistinctTimesObserved = function () {
  * @return a promise for the list of all the globalIds.
  */
 var getDistinctGlobalIds = function () {
+    logger.info("Getting the distinct globalIds");
     var deferred = Q.defer();
     db.collection("listings").distinct("globalId", function (err, globalIds) {
         if (err) {
@@ -314,6 +345,7 @@ var getDistinctGlobalIds = function () {
  * @return the promise of the list of sites' globalIds.
  */
 var getAvailableLocalSites = function () {
+    logger.info("Getting the available local sites");
     var deferred = Q.defer();
     db.collection('categories').find().toArray(function (err, siteCategories) {
         if (err) {
@@ -360,6 +392,7 @@ var close = function () {
 module.exports.getTopCategories = getTopCategories;
 module.exports.updateLocalCategories = updateLocalCategories;
 module.exports.getLocalCategories = getLocalCategories;
+module.exports.getCategoryName = getCategoryName;
 module.exports.getTodayPlannedNumberOfRequests = getTodayPlannedNumberOfRequests;
 module.exports.setTodayPlannedNumberOfRequests = setTodayPlannedNumberOfRequests;
 module.exports.getTodayActualNumberOfRequests = getTodayActualNumberOfRequests;

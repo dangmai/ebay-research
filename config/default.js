@@ -20,7 +20,8 @@ module.exports = {
         requestsPerDay: 4900
     },
     general: {
-        csv: "output.csv",
+        main_output_location: "output.csv",
+        category_mapper_location: "category.csv",
         log_level: "debug"
     }
 };
