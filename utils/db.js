@@ -22,7 +22,7 @@ db.collection("requests").ensureIndex({ date: 1 }, true, function (err) {
         db.close();
     }
 });
-db.collection("listings").ensureIndex({ timeObserved: 1}, function (err) {
+db.collection("listings").ensureIndex({ timeObserved: 1, itemId: 1 }, function (err) {
     if (err) {
         logger.error("Cannot ensure index for the listings collection");
         process.exit(2);
